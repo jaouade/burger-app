@@ -4,7 +4,7 @@ import Ingredient from "./Ingredients/Ingredient";
 
 const burger = (props) => {
     let ingredients = props.ingredients.map(ingr => {
-            return (<Ingredient key={ingr.name} type={ingr.name}/>)
+            return [...Array(ingr.quantity).keys()].map(key=><Ingredient key={ingr.name+key} type={ingr.name}/>);
         }).reduce((arr,el)=>{
            return arr.concat(el)
         },[]);

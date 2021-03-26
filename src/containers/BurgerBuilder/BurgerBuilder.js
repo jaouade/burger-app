@@ -8,7 +8,7 @@ import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary'
 import axios from "../../axios-orders";
 import Loader from '../../components/ui/Loader/Loader'
 import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
-import {NotificationManager} from 'react-notifications';
+import toast  from 'react-hot-toast';
 
 class BurgerBuilder extends Component {
     state = {
@@ -20,28 +20,25 @@ class BurgerBuilder extends Component {
     }
 
     render() {
-        if (!this.state.ingredients){
-            return <Loader/>
-        }
         const disabled = {
             ...this.state.ingredients
         }
         for (let ingr in disabled) {
             disabled[ingr.name] = ingr.quantity <= 0;
         }
-        let orderSummary = <OrderSummary purchaseContinued={this.purchaseContinueHandler}
+        let orderSummary = this.state.ingredients ? <OrderSummary purchaseContinued={this.purchaseContinueHandler}
                                          purchaseCanceled={this.purchaseCancelHandler}
-                                         ingredients={this.state.ingredients} price={this.state.totalPrice}/>;
-        if (this.state.loading){
-            orderSummary=<Loader/>
+                                         ingredients={this.state.ingredients} price={this.state.totalPrice}/> : <Loader/>;
+        if (this.state.loading) {
+            orderSummary = <Loader/>
         }
         return (
             <Wrapper>
                 <Modal closeModal={this.purchaseCancelHandler} show={this.state.purchasing}>
                     {orderSummary}
                 </Modal>
-                <Burger ingredients={this.state.ingredients}/>
-                <Controls price={this.state.totalPrice} disabled={disabled} purchasable={this.state.purchasable}
+                {this.state.ingredients ? <Burger ingredients={this.state.ingredients}/> : <Loader/>}
+                <Controls loading={this.state.ingredients===null || this.state.ingredients===undefined} price={this.state.totalPrice} disabled={disabled} purchasable={this.state.purchasable}
                           ordered={this.purchasingHandler} ingredientAdded={this.addIngredientHandler}
                           ingredientRemoved={this.removeIngredientHandler}/>
             </Wrapper>
@@ -49,8 +46,8 @@ class BurgerBuilder extends Component {
     }
 
     addIngredientHandler = (type) => {
-        let filterElement = this.state.ingredients.filter(i=>i.name===type)[0];
-        let others = this.state.ingredients.filter(i=>i.name!==type);
+        let filterElement = this.state.ingredients.filter(i => i.name === type)[0];
+        let others = this.state.ingredients.filter(i => i.name !== type);
 
         filterElement.quantity = filterElement.quantity + 1;
         const updateIngredients = [
@@ -66,14 +63,14 @@ class BurgerBuilder extends Component {
         this.updatePurchaseState(updateIngredients);
     }
     removeIngredientHandler = (type) => {
-        let filterElement = this.state.ingredients.filter(i=>i.name===type)[0];
+        let filterElement = this.state.ingredients.filter(i => i.name === type)[0];
         let quantity = filterElement.quantity;
-        let others = this.state.ingredients.filter(i=>i.name!==type);
+        let others = this.state.ingredients.filter(i => i.name !== type);
 
         if (quantity - 1 < 0) return;
         filterElement.quantity = quantity - 1;
         const updateIngredients = [
-            ...others,filterElement
+            ...others, filterElement
         ];
         const newPrice = this.state.totalPrice - filterElement.price;
         this.setState(
@@ -100,7 +97,7 @@ class BurgerBuilder extends Component {
     }
     purchaseContinueHandler = () => {
         this.setState({
-            loading:true
+            loading: true
         })
         let order = {
             ingredients: this.state.ingredients,
@@ -119,26 +116,25 @@ class BurgerBuilder extends Component {
         };
         axios.post('/orders.json', order)
             .then(response => {
-                if (response.status!==200 && response.status!==201){
-                    NotificationManager.error('An error has occurred while fetching data');
-                }else {
+                if (response.status !== 200 && response.status !== 201) {
+                    toast.error('An error has occurred while fetching data');
+                } else {
                     this.setState({
-                        loading:false, purchasing:false
+                        loading: false, purchasing: false
                     })
 
-                    NotificationManager.info("Your Order was successfully created !")
+                    toast.success("Your Order was successfully created !")
                 }
             })
             .catch(error => {
                 this.setState({
-                    loading:true, purchasing:false
+                    loading: true, purchasing: false
                 })
-                NotificationManager.error('An error has occurred while fetching data');
+                toast.error('An error has occurred while fetching data');
             });
     }
 
     updatePurchaseState(ingredients) {
-        console.log(ingredients)
         const sum = ingredients.reduce((sum, el) => sum + el.quantity, 0);
         this.setState(
             {
@@ -146,75 +142,84 @@ class BurgerBuilder extends Component {
             }
         )
     }
-    createIngredients = () =>{
+
+    createIngredients = () => {
         this.setState({
-            loading:true
+            loading: true
         })
         let ingredients = [
             {
-                name : 'salad',
+                name: 'salad',
                 quantity: 2,
                 price: 0.3
-            },{
-                name : 'meat',
+            }, {
+                name: 'meat',
                 quantity: 1,
                 price: 1.7
-            },{
-                name : 'cheese',
+            }, {
+                name: 'cheese',
                 quantity: 1,
                 price: 0.8
-            },{
-                name : 'bacon',
+            }, {
+                name: 'bacon',
                 quantity: 3,
                 price: 0.4
             },
         ]
 
-        ingredients.forEach(ingredient=>{
+        ingredients.forEach(ingredient => {
             axios.post('/ingredients.json', ingredient)
                 .then(response => {
-                    if (response.status!==200 && response.status!==201){
-                        NotificationManager.error('An error has occurred while fetching data');
-                    }else {
+                    if (response.status !== 200 && response.status !== 201) {
+                        toast.error('An error has occurred while fetching data');
+                    } else {
                         this.setState({
-                            loading:false, purchasing:false
+                            loading: false, purchasing: false
                         })
 
                     }
                 })
                 .catch(error => {
                     this.setState({
-                        loading:true, purchasing:false
+                        loading: true, purchasing: false
                     })
                 });
         })
 
     }
+
     componentDidMount() {
-        axios.get('https://burger-builder-1995-default-rtdb.firebaseio.com/ingredients.json')
-            .then(res=>{
-                let data = this.getList(res.data);
-                if (!data) {
-                    this.createIngredients();
-                }
-                let price = this.state.totalPrice + data.reduce((sum, el)=>{
-                    return sum + el.price * el.quantity
-                },0.0)
-                this.setState(
-                    {
-                        ingredients: data,
-                        totalPrice: price
-                    }
-                )
-            })
-            .catch(e=> {
-                NotificationManager.error('An error has occurred while fetching data.');
-            })
+        setTimeout(()=>this.prepareIngredients(),2000);
     }
-    getList(obj){
-        return Object.entries(obj).map((e) => (  e[1]  ));
+
+    prepareIngredients() {
+        if (this.state.ingredients === null || this.state.ingredients === undefined) {
+            axios.get('/ingredients.json')
+                .then(res => {
+                    let data = this.getList(res.data);
+                    if (data === null || data === undefined) {
+                        this.createIngredients();
+                    }
+                    let price = this.state.totalPrice + data.reduce((sum, el) => {
+                        return sum + el.price * el.quantity
+                    }, 0.0)
+                    this.setState(
+                        {
+                            ingredients: data,
+                            totalPrice: price
+                        }
+                    )
+                })
+                .catch(e => {
+                    toast.error('An error has occurred while fetching data.');
+                })
+        }
+    }
+
+    getList(obj) {
+        return Object.entries(obj).map((e) => (e[1]));
     }
 
 }
 
-export default withErrorHandler(BurgerBuilder,axios);
+export default withErrorHandler(BurgerBuilder, axios);

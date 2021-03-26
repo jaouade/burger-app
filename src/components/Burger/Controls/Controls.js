@@ -9,12 +9,12 @@ const controllers=[
     {label:'Meat',type:'meat'}
 ];
 const controls = (props) => (
-    <div className={classes.Controls}>
+     <div className={classes.Controls}>
         <NumberFormat value={parseFloat(props.price).toPrecision(4)} displayType={'text'} thousandSeparator={true} prefix={'$'} />
         {controllers.map(
-            ctrl=> <Control disabled={props.disabled[ctrl.type]} key={ctrl.label} label={ctrl.label} added = {()=>props.ingredientAdded(ctrl.type)} removed = {()=>props.ingredientRemoved(ctrl.type)}/>
+            ctrl=> <Control loading={props.loading} disabled={props.disabled[ctrl.type]} key={ctrl.label} label={ctrl.label} added = {()=>props.ingredientAdded(ctrl.type)} removed = {()=>props.ingredientRemoved(ctrl.type)}/>
         )}
-        <button disabled={!props.purchasable} onClick={props.ordered} className={classes.OrderButton} >ORDER NOW!</button>
+        <button disabled={!props.purchasable || props.loading} onClick={props.ordered} className={classes.OrderButton} >ORDER NOW!</button>
     </div>
 );
 
