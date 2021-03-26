@@ -3,7 +3,7 @@ import Wrapper from '../../../hoc/Wrapper/Wrapper'
 import NumberFormat from "react-number-format";
 import Button from '../../ui/Button/Button'
 const orderSummary =(props)=>{
-        let ingredients = Object.keys(props.ingredients).map(key=><li key={key}><span style={{textTransform:'capitalize'}}>{key}</span>: {props.ingredients[key]}</li>);
+        let ingredients = props.ingredients.map(ingr=><li key={ingr.name}><span style={{textTransform:'capitalize'}}>{ingr.name}</span>: {ingr.quantity}</li>);
 
         return (
         <Wrapper>
