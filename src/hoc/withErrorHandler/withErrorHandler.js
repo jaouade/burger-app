@@ -7,19 +7,24 @@ const withErrorHandler = (WrappedComponent,axios)=>{
         state = {
             error : null
         }
-        UNSAFE_componentWillMount() {
-            axios.interceptors.request.use(
+
+        componentWillUnmount() {
+            this.reqInterceptor = axios.interceptors.request.use(
                 req => {
                     this.setState({error:null});
                     return req;
                 }
             )
-            axios.interceptors.response.use(
+            this.resInterceptor = axios.interceptors.response.use(
                 res=>res,error => {
                     this.setState({error:error});
                 }
             )
+        }
 
+        componentWillMount() {
+            axios.interceptors.request.eject(this.reqInterceptor)
+            axios.interceptors.response.eject(this.resInterceptor)
         }
         backdropClickedHandler=()=>{
             this.setState({error :null})

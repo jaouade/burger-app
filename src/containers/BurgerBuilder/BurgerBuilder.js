@@ -8,7 +8,8 @@ import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary'
 import axios from "../../axios-orders";
 import Loader from '../../components/ui/Loader/Loader'
 import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
-import toast  from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import {isNotNull} from "../../helpers";
 
 class BurgerBuilder extends Component {
     state = {
@@ -27,8 +28,9 @@ class BurgerBuilder extends Component {
             disabled[ingr.name] = ingr.quantity <= 0;
         }
         let orderSummary = this.state.ingredients ? <OrderSummary purchaseContinued={this.purchaseContinueHandler}
-                                         purchaseCanceled={this.purchaseCancelHandler}
-                                         ingredients={this.state.ingredients} price={this.state.totalPrice}/> : <Loader/>;
+                                                                  purchaseCanceled={this.purchaseCancelHandler}
+                                                                  ingredients={this.state.ingredients}
+                                                                  price={this.state.totalPrice}/> : <Loader/>;
         if (this.state.loading) {
             orderSummary = <Loader/>
         }
@@ -38,7 +40,8 @@ class BurgerBuilder extends Component {
                     {orderSummary}
                 </Modal>
                 {this.state.ingredients ? <Burger ingredients={this.state.ingredients}/> : <Loader/>}
-                <Controls loading={this.state.ingredients===null || this.state.ingredients===undefined} price={this.state.totalPrice} disabled={disabled} purchasable={this.state.purchasable}
+                <Controls loading={this.state.ingredients === null || this.state.ingredients === undefined}
+                          price={this.state.totalPrice} disabled={disabled} purchasable={this.state.purchasable}
                           ordered={this.purchasingHandler} ingredientAdded={this.addIngredientHandler}
                           ingredientRemoved={this.removeIngredientHandler}/>
             </Wrapper>
@@ -96,7 +99,7 @@ class BurgerBuilder extends Component {
         )
     }
     purchaseContinueHandler = () => {
-        this.setState({
+        /*this.setState({
             loading: true
         })
         let order = {
@@ -131,7 +134,10 @@ class BurgerBuilder extends Component {
                     loading: true, purchasing: false
                 })
                 toast.error('An error has occurred while fetching data');
-            });
+            });*/
+        localStorage.setItem('burger', JSON.stringify(this.state.ingredients))
+        localStorage.setItem('price', this.state.totalPrice)
+        this.props.history.push('/checkout')
     }
 
     updatePurchaseState(ingredients) {
@@ -189,20 +195,27 @@ class BurgerBuilder extends Component {
     }
 
     componentDidMount() {
-        setTimeout(()=>this.prepareIngredients(),2000);
+        setTimeout(() => this.prepareIngredients(), 2000);
     }
 
     prepareIngredients() {
-        if (this.state.ingredients === null || this.state.ingredients === undefined) {
+        let burger = localStorage.getItem('burger');
+        if (isNotNull(burger)) {
+            let ingredients = JSON.parse(burger);
+            this.setState(
+                {
+                    ingredients: ingredients,
+                    totalPrice: this.getPrice(ingredients)
+                }
+            )
+        } else if (this.state.ingredients === null || this.state.ingredients === undefined) {
             axios.get('/ingredients.json')
                 .then(res => {
                     let data = this.getList(res.data);
                     if (data === null || data === undefined) {
                         this.createIngredients();
                     }
-                    let price = this.state.totalPrice + data.reduce((sum, el) => {
-                        return sum + el.price * el.quantity
-                    }, 0.0)
+                    let price = this.getPrice(data);
                     this.setState(
                         {
                             ingredients: data,
@@ -214,6 +227,12 @@ class BurgerBuilder extends Component {
                     toast.error('An error has occurred while fetching data.');
                 })
         }
+    }
+
+    getPrice(data) {
+        return this.state.totalPrice + data.reduce((sum, el) => {
+            return sum + el.price * el.quantity
+        }, 0.0);
     }
 
     getList(obj) {
