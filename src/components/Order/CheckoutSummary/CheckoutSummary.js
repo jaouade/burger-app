@@ -1,7 +1,6 @@
-import Burger from '../Burger/Burger'
-import Button from '../ui/Button/Button'
+import Burger from '../../Burger/Burger'
+import Button from '../../ui/Button/Button'
 import classes from './CheckoutSummary.css'
-import Contact from "../../containers/Checkout/Contact/Contact";
 const checkoutSummary = (props) =>{
 return(
     <div className={classes.Summary}>
@@ -10,7 +9,7 @@ return(
             <Burger ingredients={JSON.parse(localStorage.getItem('burger'))}/>
         </div>
         <Button btnType={'Danger'} clicked={props.cancelCheckout}>CANCEL</Button>
-        <Button btnType={'Success'} clicked={props.continueCheckout}>CONTINUE</Button>
+        <Button btnType={'Success'} clicked={props.continueCheckout}>CONTINUE TO CHECKOUT </Button>
     </div>
 )
 }

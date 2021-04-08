@@ -9,7 +9,7 @@ import axios from "../../axios-orders";
 import Loader from '../../components/ui/Loader/Loader'
 import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
 import toast from 'react-hot-toast';
-import {isNotNull} from "../../helpers";
+import {getListFromObjectFromFirebase, isNotNull} from "../../helpers";
 
 class BurgerBuilder extends Component {
     state = {
@@ -99,42 +99,6 @@ class BurgerBuilder extends Component {
         )
     }
     purchaseContinueHandler = () => {
-        /*this.setState({
-            loading: true
-        })
-        let order = {
-            ingredients: this.state.ingredients,
-            price: this.state.totalPrice,
-            customer: {
-                name: 'Karima Cherkaoui',
-                address: {
-                    street: 'Blvd mouqawma ain harrouda',
-                    zipCode: '28630',
-                    country: 'Morocco'
-                },
-                email: 'k.cherkaoui@gmail.com',
-
-            },
-            deliveryMethod: 'Glovo'
-        };
-        axios.post('/orders.json', order)
-            .then(response => {
-                if (response.status !== 200 && response.status !== 201) {
-                    toast.error('An error has occurred while fetching data');
-                } else {
-                    this.setState({
-                        loading: false, purchasing: false
-                    })
-
-                    toast.success("Your Order was successfully created !")
-                }
-            })
-            .catch(error => {
-                this.setState({
-                    loading: true, purchasing: false
-                })
-                toast.error('An error has occurred while fetching data');
-            });*/
         localStorage.setItem('burger', JSON.stringify(this.state.ingredients))
         localStorage.setItem('price', this.state.totalPrice)
         this.props.history.push('/checkout')
@@ -176,8 +140,8 @@ class BurgerBuilder extends Component {
         ingredients.forEach(ingredient => {
             axios.post('/ingredients.json', ingredient)
                 .then(response => {
-                    if (response.status !== 200 && response.status !== 201) {
-                        toast.error('An error has occurred while fetching data');
+                    if (response.status < 200 || response.status > 200) {
+                        //toast.error('An error has occurred while fetching data');
                     } else {
                         this.setState({
                             loading: false, purchasing: false
@@ -211,10 +175,10 @@ class BurgerBuilder extends Component {
         } else if (this.state.ingredients === null || this.state.ingredients === undefined) {
             axios.get('/ingredients.json')
                 .then(res => {
-                    let data = this.getList(res.data);
-                    if (data === null || data === undefined) {
+                    if (res.data === null || res.data === undefined) {
                         this.createIngredients();
                     }
+                    let data = getListFromObjectFromFirebase(res.data);
                     let price = this.getPrice(data);
                     this.setState(
                         {
@@ -235,9 +199,7 @@ class BurgerBuilder extends Component {
         }, 0.0);
     }
 
-    getList(obj) {
-        return Object.entries(obj).map((e) => (e[1]));
-    }
+
 
 }
 
