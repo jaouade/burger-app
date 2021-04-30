@@ -1,14 +1,15 @@
 import {Component} from "react";
 import Button from '../../../components/ui/Button/Button'
 import classes from './Contact.module.css'
-import axios from '../../../axios-orders'
 import toast from 'react-hot-toast';
 import Loader from '../../../components/ui/Loader/Loader'
 import Input from "../../../components/ui/Input/Input";
+import {connect} from "react-redux";
+import {reInitializeBurger, purchaseBurgerStartCreation, saveDraft} from "../../../store/actions/index";
+import {saveLastPage} from "../../../store/actions";
 
 class Contact extends Component {
     state = {
-
         orderForm: {
             name: {
                 label: 'Name : ',
@@ -132,6 +133,20 @@ class Contact extends Component {
         loading: false
     }
 
+    componentDidMount() {
+        if (this.props.draft)
+            this.setState({
+                orderForm: this.props.draft.customer
+            })
+
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props.ordered) {
+            this.props.history.replace('/orders')
+        }
+    }
+
     render() {
         let form = (
             <form onSubmit={this.orderHandler}>
@@ -146,8 +161,8 @@ class Contact extends Component {
                         />
                     })
                 }
-                <Button btnType={'Danger'} clicked={this.goBackHandler}>Cancel</Button>
-                <Button btnType={'Success'} type={'submit'} clicked={() => {
+                <Button btntype={'Danger'} clicked={this.goBackHandler}>Cancel</Button>
+                <Button disabled={!this.allInputsValid()} btntype={'Success'} type={'submit'} clicked={() => {
                 }}>ORDER</Button>
             </form>
         );
@@ -202,16 +217,9 @@ class Contact extends Component {
 
     orderHandler = (event) => {
         event.preventDefault();
-        let validation = []
-        let orderForm = {...this.state.orderForm}
-        Object.entries(this.state.orderForm).forEach(
-            entry => {
-                let validationResult = this.validate(entry[1].rules, entry[1].value);
-                orderForm[entry[0]].errors = [validationResult.message]
-                return validation.push(validationResult);
-            }
-        )
-        if (validation.filter(v => !v.valid).length > 0) {
+
+        let orderForm = this.allInputsValid();
+        if (!this.allInputsValid()) {
             toast.error('Please check the form, There are some fields that are not valid')
             this.setState({
                 orderForm: orderForm
@@ -237,31 +245,46 @@ class Contact extends Component {
         }
         let order = {
             status: '0',
-            ingredients: JSON.parse(localStorage.getItem('burger')),
-            price: localStorage.getItem('price'),
+            ingredients: this.props.ingredients,
+            price: this.props.price,
             customer: customer,
             deliveryMethod: deliveryMethod,
-            createdAt: new Date()
+            createdAt: new Date(),
+            userId: this.props.userId
         };
-        axios.post('/orders.json', order)
-            .then(response => {
-                if (response.status !== 200 && response.status !== 201) {
-                    toast.error('An error has occurred while fetching data');
-                } else {
-                    this.setState({
-                        loading: false
-                    })
-                    toast.success("Your Order was successfully created !")
-                    localStorage.clear();
-                    this.props.history.push('/orders')
-                }
+        this.props.onSaveDraft({
+            customer: this.state.orderForm
+        })
+        if (!this.props.token) {
+            toast.error('You need to be logged in to place an order , please go sign in ')
+            console.log(this.props.history)
+            this.props.saveLastPage(this.props.history.location.pathname)
+            setTimeout(() => this.props.history.push('/login'), 1000)
+
+        } else {
+            this.props.onOrderStartCreation(order, this.props.token)
+            this.props.reInitializeBurger()
+            this.setState({
+                loading: false
             })
-            .catch(e => {
-                this.setState({
-                    loading: false
-                })
-                toast.error('An error has occurred while fetching data');
-            });
+        }
+
+
+    }
+
+    allInputsValid() {
+        let validation = []
+        let orderForm = {...this.state.orderForm}
+        Object.entries(this.state.orderForm).forEach(
+            entry => {
+                let validationResult = this.validate(entry[1].rules, entry[1].value);
+                if (!validationResult.valid) {
+                    orderForm[entry[0]].errors = [validationResult.message]
+                }
+                return validation.push(validationResult);
+            }
+        )
+        return validation.filter(v => !v.valid).length === 0;
     }
 
     goBackHandler = (e) => {
@@ -274,4 +297,23 @@ class Contact extends Component {
     }
 }
 
-export default Contact;
+const mapStateToProps = (state) => {
+    return {
+        ingredients: state.burger.ingredients,
+        price: state.burger.totalPrice,
+        token: state.auth.token,
+        draft: state.order.draft,
+        ordered: state.order.ordered,
+        userId: state.auth.userId
+    }
+}
+const mapDispatchToProps = (dispatch) => {
+    return {
+        reInitializeBurger: () => dispatch(reInitializeBurger()),
+        onOrderStartCreation: (order, token) => dispatch(purchaseBurgerStartCreation(order, token)),
+        onSaveDraft: (draft) => dispatch(saveDraft(draft)),
+        saveLastPage: (last) => dispatch(saveLastPage(last))
+    }
+}
+const connectionFunc = connect(mapStateToProps, mapDispatchToProps);
+export default connectionFunc(Contact);

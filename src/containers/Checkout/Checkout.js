@@ -1,26 +1,28 @@
-import React, {Component} from "react";
+import React from "react";
 
 import CheckoutSummary from "../../components/Order/CheckoutSummary/CheckoutSummary";
-import {Route} from "react-router-dom";
-import Contact from "./Contact/Contact";
+import {connect} from "react-redux";
+import {withRouter} from 'react-router-dom'
 
-class Checkout extends Component {
-    continueCheckoutHandler = () => {
-        this.props.history.push('/checkout/contact-data')
+const checkout = (props) => {
+    const continueCheckoutHandler = () => {
+        props.history.push('/checkout/contact-data')
     }
-    cancelCheckoutHandler = () => {
-        this.props.history.goBack()
+    const cancelCheckoutHandler = () => {
+        props.history.goBack()
     }
 
-    render() {
-        return (
-            <div>
-                <CheckoutSummary continueCheckout={this.continueCheckoutHandler}
-                                 cancelCheckout={this.cancelCheckoutHandler}/>
-            </div>
-        )
-    }
+    return (
+        <div>
+            <CheckoutSummary ingredients={props.ingredients} continueCheckout={continueCheckoutHandler}
+                             cancelCheckout={cancelCheckoutHandler}/>
+        </div>
+    )
 
 }
-
-export default Checkout;
+const mapStateToProps = (state) => {
+    return {
+        ingredients: state.burger.ingredients
+    }
+}
+export default connect(mapStateToProps)(withRouter(checkout));

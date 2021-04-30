@@ -5,26 +5,67 @@ import Moment from "react-moment";
 import moment from "moment";
 import "semantic-ui-css/semantic.min.css";
 
-import {Button, Popup} from "semantic-ui-react";
+import {Popup} from "semantic-ui-react";
 import axios from "../../../axios-orders";
 import toast from "react-hot-toast";
-const order = (props) => {
-    const ingredients = isNotNull(props.order.ingredients) ? props.order.ingredients.map((ingr, i) =>
-        <span style={
-            {
-                textTransform: 'capitalize',
-                display: 'inline-block',
-                margin: '0 8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                padding: '5px',
-                backgroundColor: 'yellow'
+import {Component} from "react";
+import {connect} from "react-redux";
+import {deleteOrder} from "../../../store/actions";
+import Button from '../../ui/Button/Button'
+class Order extends Component {
+    render() {
+        let time = <small data-tip="" data-for="registerTip">
+            <code>
+                Created {' '} <Moment fromNow>{this.props.order.createdAt}</Moment>
+            </code>
+        </small>
+        const ingredients = isNotNull(this.props.order.ingredients) ? this.props.order.ingredients.map((ingr, i) =>
+            <span style={
+                {
+                    textTransform: 'capitalize',
+                    display: 'inline-block',
+                    margin: '0 8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    padding: '5px',
+                    backgroundColor: 'yellow'
+                }
             }
-        }
-              key={i}> {ingr.name + ': ' + ingr.quantity}</span>) : null;
-    const cancelOrder = () =>{
+                  key={i}> {ingr.name + ': ' + ingr.quantity}</span>) : null;
+        return (
+            <div className={classes.Order}>
+                <p>
+                    Ingredients : {ingredients}
+                </p>
+                <Button style={{'float':'right'}} btntype={'Danger'} clicked={()=>this.props.onOrderDeleted(this.props.order.id)}>DELETE</Button>
+                <p>Price : <strong><NumberFormat value={parseFloat(this.props.order.price).toPrecision(4)}
+                                                 displayType={'text'}
+                                                 thousandSeparator={true} prefix={'$'}/></strong></p>
 
-        let order = props.order;
+                <span
+                    style={{
+                        backgroundColor: 'black',
+                        width: 'fit-content',
+                        color: this.getStatusColor(),
+                        display: 'block',
+                        borderRadius: '4px'
+                    }}>
+                {this.getStatus()}
+            </span>
+                <Popup
+                    trigger={time}
+                    position="right center"
+                >
+                    {moment(this.props.order.createdAt).format('d MMMM YYYY h:mm:ss a')}
+                </Popup>
+            </div>
+        )
+    }
+
+
+    cancelOrder = () => {
+
+        let order = this.props.order;
         order.status = '-1'
         axios.post('/orders.json', order)
             .then(response => {
@@ -35,8 +76,7 @@ const order = (props) => {
                         loading: false
                     })
                     toast.success("Your Order was canceled successfully !")
-                    localStorage.clear();
-                    this.props.history.replace('/orders')
+                    this.this.props.history.replace('/orders')
                 }
             })
             .catch(e => {
@@ -46,8 +86,8 @@ const order = (props) => {
                 toast.error('An error has occurred while fetching data');
             });
     }
-    const getStatus = () => {
-        switch (props.order.status) {
+    getStatus = () => {
+        switch (this.props.order.status) {
             case "-1":
                 return 'Canceled'
             case '0' :
@@ -62,8 +102,8 @@ const order = (props) => {
                 return 'Created'
         }
     }
-    const getStatusColor = () => {
-        switch (props.order.status) {
+    getStatusColor = () => {
+        switch (this.props.order.status) {
             case "-1":
                 return 'white'
             case '0' :
@@ -78,30 +118,13 @@ const order = (props) => {
                 return 'yellow'
         }
     }
-    const time = <small data-tip="" data-for="registerTip">
-        <code>
-            Created  {' '} <Moment fromNow>{props.order.createdAt}</Moment>
-        </code>
-    </small>
-    return (
-        <div className={classes.Order}>
-            <p>
-                Ingredients : {ingredients}
-            </p>
-            <p>Price : <strong><NumberFormat value={parseFloat(props.order.price).toPrecision(4)} displayType={'text'}
-                                             thousandSeparator={true} prefix={'$'}/></strong></p>
 
-            <span
-                style={{backgroundColor: 'black', width:'fit-content', color: getStatusColor(),display:'block', borderRadius: '4px'}}>
-                {getStatus()}
-            </span>
-            <Popup
-                trigger={time}
-                position="right center"
-            >
-                {moment(props.order.createdAt).format('d MMMM YYYY h:mm:ss a')}
-            </Popup>
-        </div>
-    )
+
 }
-export default order;
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        onOrderDeleted: (id) => dispatch(deleteOrder(id))
+    }
+}
+export default connect(null, mapDispatchToProps)(Order);

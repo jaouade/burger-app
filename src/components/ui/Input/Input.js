@@ -1,18 +1,23 @@
 import classes from './Input.module.css'
+import {isArrayNotEmpty} from "../../../helpers";
 
 const input = (props) => {
     let input;
+    let inputClasses = [classes.InputEl]
+    if (isArrayNotEmpty(props.errors)) {
+        inputClasses.push(classes.Invalid)
+    }
     switch (props.inputtype) {
         case 'input':
-            input = <input className={classes.InputEl} {...props}/>
+            input = <input className={inputClasses.join(' ')} {...props}/>
             break
         case 'textarea':
-            input = <textarea className={classes.InputEl}  {...props}/>
+            input = <textarea className={inputClasses.join(' ')}  {...props}/>
             break
 
         case 'select':
             input = (
-                <select className={classes.InputEl}  {...props}>
+                <select className={inputClasses.join(' ')}  {...props}>
                     {
                         props.options.map((option) => <option defaultValue={option.value}
                                                               key={option.value}
@@ -23,14 +28,16 @@ const input = (props) => {
             )
             break
         default:
-            input = <input className={classes.InputEl} {...props}/>
+            input = <input className={inputClasses.join(' ')} {...props}/>
             break
     }
+
+
     return (
         <div className={classes.Input}>
-            <label style={{float:'left'}} className={classes.Label} htmlFor="">{props.label}</label>
+            <label style={{float: 'left'}} className={classes.Label} htmlFor="">{props.label}</label>
             {input}
-            {props.errors !== undefined && props.errors !== null && props.error !== [] ?
+            {isArrayNotEmpty(props.errors) ?
                 <small style={{color: 'red'}}>{props.errors.join(<br/>)}</small> : null}
         </div>
     )
